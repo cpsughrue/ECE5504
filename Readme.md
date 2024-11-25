@@ -1,6 +1,6 @@
 Build:
 ```
-cd riscv-gnu-toolchain
+cd ~/rocket/chipyard-clean/toolchains/riscv-tools/riscv-gnu-toolchain
 ./configure --prefix=~/riscv_custom
 make -j$(nproc)
 ```
