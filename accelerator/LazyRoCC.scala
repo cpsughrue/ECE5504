@@ -1,5 +1,6 @@
 // See LICENSE.Berkeley for license details.
 // See LICENSE.SiFive for license details.
+// ~/rocket/chipyard-clean/generators/rocket-chip/src/main/scala/tile/LazyRoCC.scala
 
 package freechips.rocketchip.tile
 
@@ -117,90 +118,47 @@ trait HasLazyRoCCModule extends CanHavePTWModule
   }
 }
 
-class SinExample(opcodes: OpcodeSet, val n: Int = 4)(implicit p: Parameters) extends LazyRoCC(opcodes) {
+class SinExample(opcodes: OpcodeSet)(implicit p: Parameters) extends LazyRoCC(opcodes) {
   override lazy val module = new SinExampleModuleImp(this)
 }
 
-class SinExampleModuleImp(outer: SinExample) (implicit p: Parameters) extends LazyRoCCModuleImp(outer) with HasCoreParameters {
-  // Mem(# of entries, size of an entry)
-  // UInt(xLen.W) is an unsiged int with a width of xLen.W
-  val regfile = Mem(outer.n, UInt(xLen.W))
-
-  // Vector of four elements, each element is false.B
-  val busy = RegInit(VecInit(Seq.fill(outer.n){false.B}))
+class SinExampleModuleImp(outer: SinExample)(implicit p: Parameters) extends LazyRoCCModuleImp(outer) with HasCoreParameters {
 
   val cmd = Queue(io.cmd)
   val funct = cmd.bits.inst.funct
+  
+  val value = cmd.bits.rs2
 
-  // log2Up: compute the log2 of an integer, rounded up, with min value of 1
-  // Useful for getting the number of bits needed to represent some number of states
-  // log2Up(outer.n) - 1 = 1
-  //
-  // rs2(1, 0) pulls the least two significant bits from rs2 to act as an index into regfile 
-  //
-  val addr = cmd.bits.rs2(log2Up(outer.n)-1,0)
+  // These come from the AccumulatorAccelerator and can be ignored
   val doWrite = funct === 0.U
   val doRead = funct === 1.U
   val doLoad = funct === 2.U
   val doAccum = funct === 3.U
 
-  // 
-  val memRespTag = io.mem.resp.bits.tag(log2Up(outer.n)-1,0)
+  // Simplified response interface
+  val result = Mux(doRead, value * 2.U, 0.U)
 
-  // datapath
-  val addend = cmd.bits.rs1 // rs1 is the value (as opposed to an index)
-  val accum = regfile(addr) // get current value stored in register file
-  
-  // Mux(condition, trueValue, falseValue)
-  // If doWrite is true set wdata to value from rs1
-  val wdata = Mux(doWrite, addend, accum + addend)
-
-  // Update register file if instruction is to write or accumulate
-  when (cmd.fire() && (doWrite || doAccum)) {
-    regfile(addr) := wdata
-  }
-
-  when (io.mem.resp.valid) {
-    regfile(memRespTag) := io.mem.resp.bits.data
-    busy(memRespTag) := false.B
-  }
-
-  // control
-  when (io.mem.req.fire()) {
-    busy(addr) := true.B
+  when (doRead) {
+    printf("Received an accum_read instruction with idx %d\n", value);
   }
 
   val doResp = cmd.bits.inst.xd
-  val stallReg = busy(addr)
-  val stallLoad = doLoad && !io.mem.req.ready
   val stallResp = doResp && !io.resp.ready
 
-  cmd.ready := !stallReg && !stallLoad && !stallResp
-    // command resolved if no stalls AND not issuing a load that will need a request
+  cmd.ready := !stallResp
 
-  // PROC RESPONSE INTERFACE
-  io.resp.valid := cmd.valid && doResp && !stallReg && !stallLoad
-    // valid response if valid command, need a response, and no stalls
+  // PROC Response Interface
+  // Valid response if valid command, need a response, and no stalls
+  io.resp.valid := cmd.valid && doResp
+  // Must respond with the appropriate tag or undefined behavior
   io.resp.bits.rd := cmd.bits.inst.rd
-    // Must respond with the appropriate tag or undefined behavior
-  io.resp.bits.data := 99.U
-    // Semantics is to always send out prior accumulator register value
-
-  io.busy := cmd.valid || busy.reduce(_||_)
-    // Be busy when have pending memory requests or committed possibility of pending requests
+  // THIS IS THE DATA THAT GETS SENT BACK TO THE USER
+  io.resp.bits.data := result
+    
+  // Be busy when have pending memory requests or committed possibility of pending requests
+  io.busy := cmd.valid
+  // Set this true to trigger an interrupt on the processor (please refer to supervisor documentation)
   io.interrupt := false.B
-    // Set this true to trigger an interrupt on the processor (please refer to supervisor documentation)
-
-  // MEMORY REQUEST INTERFACE
-  io.mem.req.valid := cmd.valid && doLoad && !stallReg && !stallResp
-  io.mem.req.bits.addr := addend
-  io.mem.req.bits.tag := addr
-  io.mem.req.bits.cmd := M_XRD // perform a load (M_XWR for stores)
-  io.mem.req.bits.size := log2Ceil(8).U
-  io.mem.req.bits.signed := false.B
-  io.mem.req.bits.data := 0.U // we're not performing any stores...
-  io.mem.req.bits.phys := false.B
-  io.mem.req.bits.dprv := cmd.bits.status.dprv
 }
 
 

@@ -56,18 +56,7 @@ class WithL1Prefetcher extends Config((site, here, up) => {
   case BuildL1Prefetcher => Some((p: Parameters) => Module(new ExampleL1Prefetcher()(p)))
 })
 
-
-// class WithCustomSinAccelerator extends Config((site, here, up) => {
-//   case BuildRoCC => up(BuildRoCC) ++ Seq((p: Parameters) => {
-//       val customSin = LazyModule(new CustomSinAccelerator(OpcodeSet.custom0)(p))
-//       customSin
-//     })
-// })
-
-// class CustomSinRocketConfig extends Config(
-//   new WithCustomSinAccelerator ++
-//   new RocketConfig // Using Chipyard's RocketConfig as base
-// )
+// FINAL PROJECT CONFIG
 
 class CustomSinRocketConfig extends Config(
   new WithRoccExample ++

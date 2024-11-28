@@ -7,8 +7,8 @@ OBJDUMP := riscv64-unknown-elf-objdump
 
 CFLAGS := -std=gnu11 -Wall -specs=htif_nano.specs
 
-.PHONY: accum_32
-accum_32: accum_32.riscv
+.PHONY: sin_32
+sin_32: sin_32.riscv
 
 .PRECIOUS: %.riscv
 

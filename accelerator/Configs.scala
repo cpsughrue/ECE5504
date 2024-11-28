@@ -1,5 +1,6 @@
 // See LICENSE.SiFive for license details.
 // See LICENSE.Berkeley for license details.
+// ~/rocket/chipyard-clean/generators/rocket-chip/src/main/scala/subsystem/Configs.scala
 
 package freechips.rocketchip.subsystem
 
@@ -278,7 +279,7 @@ class WithRoccExample extends Config((site, here, up) => {
     //     accumulator
     // },
     (p: Parameters) => {
-        val accumulator = LazyModule(new SinExample(OpcodeSet.custom0, n = 4)(p))
+        val accumulator = LazyModule(new SinExample(OpcodeSet.custom0)(p))
         accumulator
     },
     (p: Parameters) => {
