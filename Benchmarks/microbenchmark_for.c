@@ -1,6 +1,7 @@
 #include "/home/ramm/rocket/chipyard-clean/tests/rocc.h"
 #include "stdio.h"
-#include "hpm.h"
+
+#define ITERATIONS 50000
 
 static inline unsigned long calculate_sin(int idx)
 {
@@ -19,10 +20,17 @@ static inline unsigned long read_cycles(void)
 
 int main(int argc, char *argv[])
 {
+    unsigned long result;
+
+    /* Enable performance counters */
     hpm_init();
-    unsigned long start = read_cycles();
-	unsigned long result = calculate_sin(0);
-	unsigned long end = read_cycles();
+
+    for (int i; i< ITERATIONS; i++){
+        unsigned long start = read_cycles();
+        result = calculate_sin(2048);
+        unsigned long end = read_cycles();
+    }
+    /* Print performance counter data */
     hpm_print();
 
     printf("result is %lu\n", result);
