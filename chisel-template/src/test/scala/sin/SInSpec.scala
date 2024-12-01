@@ -28,10 +28,10 @@ class SinSpec extends AnyFreeSpec with Matchers {
 
   "CalculateSinModule should calculate proper value" in {
 
-    simulate(new CalculateSinModule) { sinModule =>
+    simulate(new LookupSinModule) { sinModule =>
       sinModule.io.in.poke(134217728.S)
       sinModule.clock.step() // Step the clock to propagate signals
-      sinModule.io.out.expect(223957614.S)
+      sinModule.io.out.expect(105916646.S)
     }
   }
 }
