@@ -33,5 +33,11 @@ class SinSpec extends AnyFreeSpec with Matchers {
       sinModule.clock.step() // Step the clock to propagate signals
       sinModule.io.out.expect(379624726.S)
     }
+    
+    simulate(new ChebyshevSinModule) { sinModule =>
+      sinModule.io.in.poke(421657428.S)
+      sinModule.clock.step() // Step the clock to propagate signals
+      sinModule.io.out.expect(379625044.S)
+    }
   }
 }
