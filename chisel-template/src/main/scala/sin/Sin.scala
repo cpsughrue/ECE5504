@@ -12,12 +12,16 @@ class LookupSinModule extends Module {
     val out = Output(SInt(32.W))
   })
 
+  // TODO: Implement range reduction
+  assert(io.in > -843314857.S, "input value is too small. must be greater then -pi/2 * 2^29")
+  assert(io.in < 843314856.S, "input value is too large. must be smaller then pi/2 * 2^29")
+
   val sinLookupTable = Module(new SinLookupTable)
   val xLookupTable = Module(new XLookupTable)
 
-  // Q5.27 representation of pi/(20 - 1)
-  val spacing: SInt = 22192496.S
-  val index: SInt = (io.in + 210828715.S) / spacing
+  // Information manually pulled from lookup table
+  val spacing: SInt = 1648709.S
+  val index: SInt = (io.in + 843314857.S) / spacing
 
   printf("index: %d\n", index)
 
