@@ -1,6 +1,5 @@
 // See LICENSE.SiFive for license details.
 // See LICENSE.Berkeley for license details.
-// ~/rocket/chipyard-clean/generators/rocket-chip/src/main/scala/subsystem/Configs.scala
 
 package freechips.rocketchip.subsystem
 
