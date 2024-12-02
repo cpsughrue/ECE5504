@@ -2058,7 +2058,7 @@ static const int32_t x_table[TABLE_SIZE] = {
 };
 
 // IEEE floats have 23 bit mantissa
-#define MAX_BITS 23
+#define MAX_BITS 16
 // [arctan(1/2^0), arctan(1/2^1), arctan(1/2^2), arctan(1/2^3), ...]
 static const float atan_table[MAX_BITS] = {
     0.78539816,
@@ -2076,14 +2076,7 @@ static const float atan_table[MAX_BITS] = {
     0.00024414,
     0.00012207,
     0.00006104,
-    0.00003052,
-    0.00001526,
-    0.00000763,
-    0.00000381,
-    0.00000191,
-    0.00000095,
-    0.00000048,
-    0.00000024
+    0.00003052
 };
 
 #endif // SIN_LOOKUP_TABLE_H

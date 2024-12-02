@@ -32,31 +32,25 @@ float chebyshev_sin(float x) {
     return (x - pi_major - pi_minor) * (x + pi_major + pi_minor) * p1 * x;
 }
 
-#define N 30 // 31 causes overflow
+#define N 29
 
-// Q34.30
+// Q35.29
 int64_t chebyshev_fp_sin(int64_t x) {
 
     const int64_t coeffs[] = {
-        -0.10132118          * pow(2, N),
-         0.0066208798        * pow(2, N),
-        -0.00017350505       * pow(2, N),
-         0.0000025222919     * pow(2, N),
-        -0.000000023317787   * pow(2, N),
-         0.00000000013291342 * pow(2, N) 
+        -54396394,
+         3554557,
+        -93149,
+         1354,
+        -12,
     };
 
-    //const int64_t pi_major = 13816870814000;
-    //const int64_t pi_minor = -384489;
-    const int64_t pi_major = 3.1415927 * pow(2, N);
-    const int64_t pi_minor = -0.00000008742278 * pow(2, N);
-
-    printf("pi_major: %lld\n", pi_major);
+    const int64_t pi_major = 1686629738;
+    const int64_t pi_minor = -46;
 
     int64_t x2 = (x * x) >> N;
 
-    int64_t p11 = coeffs[5];
-    int64_t p9  = ((p11 * x2) >> N) + coeffs[4];
+    int64_t p9  = coeffs[4];
     int64_t p7  = ((p9  * x2) >> N) + coeffs[3];
     int64_t p5  = ((p7  * x2) >> N) + coeffs[2];
     int64_t p3  = ((p5  * x2) >> N) + coeffs[1];
@@ -133,17 +127,69 @@ float cordic_sin(float x) {
     return sin;
 }
 
+#define MAX_BITS_FP 16
+
+int64_t cordic_fp_sin(int64_t x) {
+    
+    int64_t cos = 326016437;
+    int64_t sin = 0;
+    int64_t vecmode = -1;
+
+    const int64_t atan_table_fp[MAX_BITS_FP] = {
+        421657428,
+        248918914,
+        131521918,
+        66762579,
+        33510843,
+        16771757,
+        8387925,
+        4194218,
+        2097141,
+        1048574,
+        524287,
+        262143,
+        131071,
+        65535,
+        32767,
+        16383
+    };
+    
+    int64_t t = 536870912;
+    for (int i = 0; i < MAX_BITS; ++i) {
+        
+        uint64_t x1 = 0;
+        if (vecmode >= 0 && sin < vecmode || vecmode < 0  && x >= 0) {
+            x1 = cos - ((sin * t) >> N);
+            sin = sin + ((cos * t) >> N);
+            x = x - atan_table_fp[i];
+        }
+        else {
+            x1 = cos + ((sin * t) >> N);
+            sin = sin - ((cos * t) >> N);
+            x = x + atan_table_fp[i];
+        }
+        cos = x1;
+        t /= 2;
+    }
+    return sin;
+}
+
 int main () {
     // All values must be range reduced to [-pi/2, pi/2] before being calculated
-    float x = 1.57;
-    printf("stdlib:    %f\n", sin(x));
-    printf("cordic:    %f\n\n", cordic_sin(normalize(x)));    
-    
+    float x = -1.5;
+    printf("stdlib:    %f\n\n", sin(x));
+
     int64_t value = normalize(x) * pow(2, N);
-    int64_t result = chebyshev_fp_sin(value);
+    int64_t result = cordic_fp_sin(value);
+    printf("cordic float:  %f\n", cordic_sin(normalize(x)));    
+    printf("cordic result: %lld\n", result);
+    printf("cordic fp:     %f\n\n", (float)(result / pow(2, N)));
+
+    int64_t cheb_value = normalize(x) * pow(2, N);
+    int64_t cheb_result = chebyshev_fp_sin(value);
     printf("chebyshev float:  %f\n", chebyshev_sin(normalize(x)));
-    printf("chebyshev result: %lld\n", result);
-    printf("chebyshev fp:     %f\n\n", (float)(result / pow(2, N)));
+    printf("chebyshev result: %lld\n", cheb_result);
+    printf("chebyshev fp:     %f\n\n", (float)(cheb_result / pow(2, N)));
 
     int32_t lookup_value = normalize(x) * pow(2, FIXED_POINT_N);
     int64_t lookup_result = lookup_sin(lookup_value);

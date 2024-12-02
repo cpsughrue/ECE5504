@@ -29,7 +29,7 @@ def generate_sine_table_header(filename):
     print(f"largest distance between sin elements: {largest_spacing(sine_values)}")
 
     # arctan values for cordic iteration
-    MAX_BITS = 23
+    MAX_BITS = 16
     atan_table = [0] * MAX_BITS
     t = 1.0
     for i in range(MAX_BITS):
