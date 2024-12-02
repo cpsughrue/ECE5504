@@ -2322,7 +2322,7 @@ class SinExampleModuleImp(outer: SinExample)(implicit p: Parameters) extends Laz
   val result = Mux(doRead, output , 0.U)
 
   when (doRead) {
-    printf("Received an accum_read instruction with idx %d\n", value);
+    printf("Received a calculate_sin instruction with value: %d\n", value);
   }
 
   val doResp = cmd.bits.inst.xd
@@ -2342,6 +2342,11 @@ class SinExampleModuleImp(outer: SinExample)(implicit p: Parameters) extends Laz
   io.busy := cmd.valid
   // Set this true to trigger an interrupt on the processor (please refer to supervisor documentation)
   io.interrupt := false.B
+
+  def CalculateSin(doRead: Bool, value: UInt): UInt = {
+    printf("calculating sin")
+    value * 2.U
+  }
 }
 
 
