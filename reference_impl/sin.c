@@ -36,15 +36,15 @@ float chebyshev_sin(float x) {
 
 #include "sin_lookup_table.h"
 
-float linear_interpolate(float x0, float y0, float x1, float y1, float x) {
+int64_t linear_interpolate(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x) {
     return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
 }
 
-float lookup_sin(float x) {
-    float spacing = M_PI / (TABLE_SIZE - 1);
+int64_t lookup_sin(int32_t x) {
+    int32_t spacing = 1648709;
 
-    int i = (x + M_PI_2) / spacing;
-
+    int32_t i = (x + 843314857) / spacing;
+    
     return linear_interpolate(x_table[i], sin_table[i], x_table[i + 1], sin_table[i + 1], x);
 }
 
@@ -99,11 +99,14 @@ float cordic_sin(float x) {
 
 int main () {
     // All values must be range reduced to [-pi/2, pi/2] before being calculated
-    float x = 53;
+    float x = 1;
     printf("stdlib:    %f\n", sin(x));
     printf("chebyshev: %f\n", chebyshev_sin(normalize(x)));
-    printf("loohup:    %f\n", lookup_sin(normalize(x)));
     printf("cordic:    %f\n", cordic_sin(normalize(x)));    
+
+    int32_t value = normalize(x) * pow(2, FIXED_POINT_N);
+    int64_t result = lookup_sin(value);
+    printf("lookup:    %f\n", (float)(result / pow(2, FIXED_POINT_N)));
 
     return 0;
 }
