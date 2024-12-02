@@ -32,11 +32,47 @@ float chebyshev_sin(float x) {
     return (x - pi_major - pi_minor) * (x + pi_major + pi_minor) * p1 * x;
 }
 
+#define N 30 // 31 causes overflow
+
+// Q34.30
+int64_t chebyshev_fp_sin(int64_t x) {
+
+    const int64_t coeffs[] = {
+        -0.10132118          * pow(2, N),
+         0.0066208798        * pow(2, N),
+        -0.00017350505       * pow(2, N),
+         0.0000025222919     * pow(2, N),
+        -0.000000023317787   * pow(2, N),
+         0.00000000013291342 * pow(2, N) 
+    };
+
+    //const int64_t pi_major = 13816870814000;
+    //const int64_t pi_minor = -384489;
+    const int64_t pi_major = 3.1415927 * pow(2, N);
+    const int64_t pi_minor = -0.00000008742278 * pow(2, N);
+
+    printf("pi_major: %lld\n", pi_major);
+
+    int64_t x2 = (x * x) >> N;
+
+    int64_t p11 = coeffs[5];
+    int64_t p9  = ((p11 * x2) >> N) + coeffs[4];
+    int64_t p7  = ((p9  * x2) >> N) + coeffs[3];
+    int64_t p5  = ((p7  * x2) >> N) + coeffs[2];
+    int64_t p3  = ((p5  * x2) >> N) + coeffs[1];
+    int64_t p1  = ((p3  * x2) >> N) + coeffs[0];
+
+    int64_t t1 = (x - pi_major - pi_minor) * (x + pi_major + pi_minor) >> N;
+    int64_t t2 = (t1 * p1) >> N;
+    return  (t2 * x) >> N;
+}
+
 /* LOOKUP TABLE */
 
 #include "sin_lookup_table.h"
 
-int64_t linear_interpolate(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x) {
+int64_t linear_interpolate(int64_t x0, int64_t y0, int64_t x1, int64_t y1, int64_t x) {
+// int64_t linear_interpolate(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x) {
     return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
 }
 
@@ -99,14 +135,19 @@ float cordic_sin(float x) {
 
 int main () {
     // All values must be range reduced to [-pi/2, pi/2] before being calculated
-    float x = 1;
+    float x = 1.57;
     printf("stdlib:    %f\n", sin(x));
-    printf("chebyshev: %f\n", chebyshev_sin(normalize(x)));
-    printf("cordic:    %f\n", cordic_sin(normalize(x)));    
+    printf("cordic:    %f\n\n", cordic_sin(normalize(x)));    
+    
+    int64_t value = normalize(x) * pow(2, N);
+    int64_t result = chebyshev_fp_sin(value);
+    printf("chebyshev float:  %f\n", chebyshev_sin(normalize(x)));
+    printf("chebyshev result: %lld\n", result);
+    printf("chebyshev fp:     %f\n\n", (float)(result / pow(2, N)));
 
-    int32_t value = normalize(x) * pow(2, FIXED_POINT_N);
-    int64_t result = lookup_sin(value);
-    printf("lookup:    %f\n", (float)(result / pow(2, FIXED_POINT_N)));
+    int32_t lookup_value = normalize(x) * pow(2, FIXED_POINT_N);
+    int64_t lookup_result = lookup_sin(lookup_value);
+    printf("lookup:    %f\n", (float)(lookup_result / pow(2, FIXED_POINT_N)));
 
     return 0;
 }
