@@ -78,3 +78,89 @@ class LookupSinModule extends Module {
 
   io.out := result
 }
+
+
+
+class CordicSinModule extends Module {
+  val io = IO(new Bundle {
+    val in = Input(SInt(64.W))      // Input angle in fixed-point format
+    val out = Output(SInt(64.W))    // Output sine value in fixed-point format
+  })
+
+  // TODO: Implement range reduction
+  assert(io.in > -843314857.S, "input value is too small. must be greater then -pi/2 * 2^29")
+  assert(io.in < 843314856.S, "input value is too large. must be smaller then pi/2 * 2^29")
+  
+  val atan_table_fp = VecInit(Seq(
+    421657428.S(64.W),
+    248918914.S(64.W),
+    131521918.S(64.W),
+    66762579.S(64.W),
+    33510843.S(64.W),
+    16771757.S(64.W),
+    8387925.S(64.W),
+    4194218.S(64.W),
+    2097141.S(64.W),
+    1048574.S(64.W),
+    524287.S(64.W),
+    262143.S(64.W),
+    131071.S(64.W),
+    65535.S(64.W),
+    32767.S(64.W),
+    16383.S(64.W)
+  ))
+
+  // State Registers
+  val cos  = RegInit(326016437.S(64.W))    // Start with cos(0) = 1 in fixed point
+  val sin  = RegInit(0.S(64.W))            // Start with sin(0) = 0 in fixed point
+  val t    = RegInit(536870912.S(64.W))    // Start with t = 2^29
+  val x    = RegInit(0.S(64.W))            // Register to hold the input angle
+  val x1   = RegInit(0.S(64.W))            // 
+  val step = RegInit(0.U(4.W))             // Register to track the iteration step
+
+  val i = RegInit(0.U(8.W))
+  val initialized = RegInit(false.B)
+
+  // Initialize the module
+  when(reset.asBool) {
+    i := 0.U
+    initialized := false.B
+
+    cos  := 326016437.S
+    sin  := 0.S
+    t    := 536870912.S
+    x    := 0.S
+    x1   := 0.S
+    step := 0.U
+  }
+
+  val N = 29
+
+  when(io.in =/= 0.S) {
+    
+    when(!initialized) {
+      x := io.in
+      initialized := true.B
+    } .otherwise {
+
+      when (i % 2.U === 0.U) {
+        when (x >= 0.S) {
+          x1 := cos - ((sin * t) >> N)
+          sin := sin + ((cos * t) >> N)
+          x := x - atan_table_fp(i / 2.U)
+        } .otherwise {
+          x1 := cos + ((sin * t) >> N)
+          sin := sin - ((cos * t) >> N)
+          x := x + atan_table_fp(i / 2.U)
+        }
+      } .otherwise {
+        cos := x1
+        t := t >> 1
+      }
+      i := i + 1.U
+    }
+  }
+
+  // Output the sine value
+  io.out := sin
+}
