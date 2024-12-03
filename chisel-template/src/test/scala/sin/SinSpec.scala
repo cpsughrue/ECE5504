@@ -35,9 +35,24 @@ class SinSpec extends AnyFreeSpec with Matchers {
     }
     
     simulate(new ChebyshevSinModule) { sinModule =>
+      sinModule.reset.poke(true.B) // Explicit reset
+      sinModule.clock.step()
+      sinModule.reset.poke(false.B)
       sinModule.io.in.poke(421657428.S)
       sinModule.clock.step() // Step the clock to propagate signals
       sinModule.io.out.expect(379625044.S)
+    }
+    
+    simulate(new CordicSinModule) { sinModule =>
+      sinModule.io.resetRuntime.poke(true.B)
+      sinModule.clock.step()
+      sinModule.io.resetRuntime.poke(false.B)
+
+      
+      sinModule.io.in.poke(421657428.S)
+      sinModule.clock.step(33) // 1 step to initialize x, 32 steps to update then sync
+      sinModule.io.out.expect(379630958.S)
+      sinModule.io.done.expect(true.B)
     }
   }
 }

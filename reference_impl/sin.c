@@ -133,7 +133,6 @@ int64_t cordic_fp_sin(int64_t x) {
     
     int64_t cos = 326016437;
     int64_t sin = 0;
-    int64_t vecmode = -1;
 
     const int64_t atan_table_fp[MAX_BITS_FP] = {
         421657428,
@@ -157,8 +156,8 @@ int64_t cordic_fp_sin(int64_t x) {
     int64_t t = 536870912;
     for (int i = 0; i < MAX_BITS; ++i) {
         
-        uint64_t x1 = 0;
-        if (vecmode >= 0 && sin < vecmode || vecmode < 0  && x >= 0) {
+        int64_t x1 = 0;
+        if (x >= 0) {
             x1 = cos - ((sin * t) >> N);
             sin = sin + ((cos * t) >> N);
             x = x - atan_table_fp[i];
@@ -170,13 +169,15 @@ int64_t cordic_fp_sin(int64_t x) {
         }
         cos = x1;
         t /= 2;
+        printf("sin: %11lld, cos: %11lld, x: %11lld, x1: %11lld\n", sin, cos, x, x1);
+        //printf("sin: %lld, cos: %lld, x: %lld, x1: %lld\n", sin, cos, x, x1);
     }
     return sin;
 }
 
 int main () {
     // All values must be range reduced to [-pi/2, pi/2] before being calculated
-    float x = -1.5;
+    float x = .7;
     printf("stdlib:    %f\n\n", sin(x));
 
     int64_t value = normalize(x) * pow(2, N);
