@@ -83,8 +83,10 @@ class LookupSinModule extends Module {
 
 class CordicSinModule extends Module {
   val io = IO(new Bundle {
-    val in = Input(SInt(64.W))      // Input angle in fixed-point format
-    val out = Output(SInt(64.W))    // Output sine value in fixed-point format
+    val in = Input(SInt(64.W))       // Input angle in fixed-point format
+    val resetRuntime = Input(Bool()) // Runtime reset signal
+    val out = Output(SInt(64.W))     // Output sine value in fixed-point format
+    val done = Output(Bool())        // Indicates when the computation is done
   })
 
   // TODO: Implement range reduction
@@ -120,11 +122,13 @@ class CordicSinModule extends Module {
 
   val i = RegInit(0.U(8.W))
   val initialized = RegInit(false.B)
+  val ready = RegInit(false.B)
 
   // Initialize the module
-  when(reset.asBool) {
+  when(io.resetRuntime) {
     i := 0.U
     initialized := false.B
+    ready := false.B
 
     cos  := 326016437.S
     sin  := 0.S
@@ -161,6 +165,11 @@ class CordicSinModule extends Module {
     }
   }
 
+  when (i === 31.U) {
+    ready := true.B
+  }
+
   // Output the sine value
+  io.done := ready
   io.out := sin
 }
