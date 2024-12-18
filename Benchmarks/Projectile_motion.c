@@ -3,7 +3,7 @@
 #include "/home/ramm/rocket/chipyard-clean/tests/rocc.h"
 #include <math.h>
 
-#define HARDWARE_ACC_SINE 0
+#define HARDWARE_ACC_SINE 1
 
 #define G 10.0 // Acceleration due to gravity
 #define INITIAL_VELOCITY 30.0 // Fixed initial velocity in m/s
@@ -18,7 +18,6 @@ static inline unsigned long sin_custom(double idx)
 	unsigned long value;
     idx = (int32_t)(idx * CONVERSION_FACTOR);
     // printf("Value given to sin is %f\n", idx);
- // ROCC_INSTRUCTION_DSS(X, rd,  rs1, rs2, funct)
 	ROCC_INSTRUCTION_DSS(0, value, 0, (int64_t)idx, 2);
     // printf("Value returned by sin is %lu\n", value);
 	return value;
@@ -37,12 +36,13 @@ int main() {
     for (angle_degrees = 1; angle_degrees <= 44; angle_degrees++) {
         // Convert the angle to radians
         angle_radians = angle_degrees * M_PI / 180.0;
-
+#if (HARDWARE_ACC_SINE == 0)
+        sin_val = sin(angle_radians);
+        sin_2val = sin(2 * angle_radians);
+#else
         sin_val = (double)sin_custom(angle_radians)/(int32_t)(CONVERSION_FACTOR) ;
-
         sin_2val = (double)sin_custom(2 * angle_radians)/(int32_t)CONVERSION_FACTOR ;
-        // printf("Sin val %d, sin 2 val %d\n", (int32_t)sin_val, (int32_t)sin_2val);
-
+#endif
         // Calculate the time of flight
         // total time of flight by the projectile is given by: 
         // t = 2usinθ/g
